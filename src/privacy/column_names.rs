@@ -55,6 +55,11 @@ const PHI_PATTERNS: &[&str] = &[
     "birth",
     "birthday",
     "date_of_birth",
+    "admission_date",
+    "discharge_date",
+    "death_date",
+    "date_of_death",
+    "dod",            // date of death
     // ===== DATES (French) =====
     "naissance",     // birth
     "date_naissance",
@@ -123,6 +128,61 @@ const PHI_PATTERNS: &[&str] = &[
     "pt_",           // pt_name, pt_id
     "_pt",           // patient_pt
     "subj",          // subj_id, subj_name
+    // ===== HIPAA #9: HEALTH PLAN BENEFICIARY NUMBERS =====
+    "insurance",
+    "policy",
+    "policy_number",
+    "beneficiary",
+    "member_id",
+    "subscriber",
+    "group_number",
+    "plan_id",
+    // ===== HIPAA #10: ACCOUNT NUMBERS =====
+    "account",
+    "acct",
+    "account_number",
+    "billing",
+    // ===== HIPAA #11: CERTIFICATE/LICENSE NUMBERS =====
+    "license",
+    "license_number",
+    "certificate",
+    "cert_number",
+    "credential",
+    // ===== HIPAA #12: VEHICLE IDENTIFIERS =====
+    "vin",
+    "vehicle",
+    "license_plate",
+    "plate_number",
+    // ===== HIPAA #13: DEVICE IDENTIFIERS =====
+    "serial",
+    "serial_number",
+    "device_id",
+    "imei",
+    "udid",
+    "mac_address",
+    // ===== HIPAA #14: WEB URLs =====
+    "url",
+    "website",
+    "web_address",
+    "homepage",
+    // ===== HIPAA #15: IP ADDRESSES =====
+    "ip_address",
+    "ipv4",
+    "ipv6",
+    // ===== HIPAA #16: BIOMETRIC IDENTIFIERS =====
+    "fingerprint",
+    "biometric",
+    "voiceprint",
+    "retina",
+    "iris_scan",
+    "face_id",
+    // ===== HIPAA #17: PHOTOGRAPHS =====
+    "photo",
+    "photograph",
+    "picture",
+    "headshot",
+    "face_image",
+    "portrait",
 ];
 
 /// Patterns that should be recoded (anonymized but preserved for analysis)
@@ -699,5 +759,161 @@ mod tests {
         // "hospital" is same in Portuguese
         let result = check_column_name("hospital");
         assert_eq!(result.classification, Classification::Recode);
+    }
+
+    // ===== HIPAA COMPLETE COVERAGE TESTS =====
+
+    // HIPAA #3: Additional dates
+    #[test]
+    fn test_phi_admission_date() {
+        let result = check_column_name("admission_date");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_discharge_date() {
+        let result = check_column_name("discharge_date");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_death_date() {
+        let result = check_column_name("date_of_death");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #9: Health plan beneficiary numbers
+    #[test]
+    fn test_phi_insurance() {
+        let result = check_column_name("insurance_id");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_policy_number() {
+        let result = check_column_name("policy_number");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_beneficiary() {
+        let result = check_column_name("beneficiary_id");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #10: Account numbers
+    #[test]
+    fn test_phi_account() {
+        let result = check_column_name("account_number");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_billing() {
+        let result = check_column_name("billing_id");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #11: Certificate/license numbers
+    #[test]
+    fn test_phi_license() {
+        let result = check_column_name("license_number");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_certificate() {
+        let result = check_column_name("certificate_id");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #12: Vehicle identifiers
+    #[test]
+    fn test_phi_vin() {
+        let result = check_column_name("vin");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_license_plate() {
+        let result = check_column_name("license_plate");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #13: Device identifiers
+    #[test]
+    fn test_phi_serial_number() {
+        let result = check_column_name("serial_number");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_device_id() {
+        let result = check_column_name("device_id");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_imei() {
+        let result = check_column_name("imei");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_mac_address() {
+        let result = check_column_name("mac_address");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #14: Web URLs
+    #[test]
+    fn test_phi_url() {
+        let result = check_column_name("profile_url");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_website() {
+        let result = check_column_name("website");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #15: IP addresses
+    #[test]
+    fn test_phi_ip_address() {
+        let result = check_column_name("ip_address");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #16: Biometric identifiers
+    #[test]
+    fn test_phi_fingerprint() {
+        let result = check_column_name("fingerprint");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_biometric() {
+        let result = check_column_name("biometric_data");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    // HIPAA #17: Photographs
+    #[test]
+    fn test_phi_photo() {
+        let result = check_column_name("patient_photo");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_photograph() {
+        let result = check_column_name("photograph");
+        assert_eq!(result.classification, Classification::Phi);
+    }
+
+    #[test]
+    fn test_phi_headshot() {
+        let result = check_column_name("headshot");
+        assert_eq!(result.classification, Classification::Phi);
     }
 }

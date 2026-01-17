@@ -48,6 +48,21 @@ static SSN_PATTERN: Lazy<Regex> =
 static LONG_ID_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^[A-Za-z0-9]{10,}$").unwrap());
 
+// HIPAA #14: URLs
+static URL_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^https?://[^\s]+$").unwrap());
+
+// HIPAA #15: IP addresses
+static IPV4_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$").unwrap());
+
+static IPV6_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,7}:$|^::[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){0,6}$").unwrap());
+
+// HIPAA #13: MAC addresses
+static MAC_ADDRESS_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$").unwrap());
+
 /// Check if a value matches any PHI pattern
 pub fn check_value_pattern(value: &str) -> ValuePatternResult {
     let trimmed = value.trim();
@@ -87,6 +102,26 @@ pub fn check_value_pattern(value: &str) -> ValuePatternResult {
             "long_id",
             "Value appears to be a long alphanumeric identifier",
         );
+    }
+
+    // Check URL pattern (HIPAA #14)
+    if URL_PATTERN.is_match(trimmed) {
+        return ValuePatternResult::phi("url", "Value appears to be a URL");
+    }
+
+    // Check IPv4 pattern (HIPAA #15)
+    if IPV4_PATTERN.is_match(trimmed) {
+        return ValuePatternResult::phi("ipv4", "Value appears to be an IPv4 address");
+    }
+
+    // Check IPv6 pattern (HIPAA #15)
+    if IPV6_PATTERN.is_match(trimmed) {
+        return ValuePatternResult::phi("ipv6", "Value appears to be an IPv6 address");
+    }
+
+    // Check MAC address pattern (HIPAA #13)
+    if MAC_ADDRESS_PATTERN.is_match(trimmed) {
+        return ValuePatternResult::phi("mac_address", "Value appears to be a MAC address");
     }
 
     ValuePatternResult::safe()
@@ -181,5 +216,31 @@ mod tests {
         // Short IDs are usually safe
         assert!(!check_value_pattern("AB12").is_phi);
         assert!(!check_value_pattern("Group1").is_phi);
+    }
+
+    // HIPAA #14: URLs
+    #[test]
+    fn test_url_detection() {
+        assert!(check_value_pattern("https://example.com/patient/123").is_phi);
+        assert!(check_value_pattern("http://hospital.org/records").is_phi);
+    }
+
+    // HIPAA #15: IP addresses
+    #[test]
+    fn test_ipv4_detection() {
+        assert!(check_value_pattern("192.168.1.1").is_phi);
+        assert!(check_value_pattern("10.0.0.255").is_phi);
+    }
+
+    #[test]
+    fn test_ipv6_detection() {
+        assert!(check_value_pattern("2001:0db8:85a3:0000:0000:8a2e:0370:7334").is_phi);
+    }
+
+    // HIPAA #13: MAC addresses
+    #[test]
+    fn test_mac_address_detection() {
+        assert!(check_value_pattern("00:1A:2B:3C:4D:5E").is_phi);
+        assert!(check_value_pattern("00-1A-2B-3C-4D-5E").is_phi);
     }
 }
