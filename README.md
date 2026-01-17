@@ -1,6 +1,12 @@
 # ert-manifest
 
-Privacy-preserving metadata extraction from clinical trial data files.
+Sharing data is cumbersome. Good tools exist to anonymize data, including ARX (https://arx.deidentifier.org/downloads/).
+
+Goal: To create a simple easy-to-distribute program that merely takes the data and returns a data dictionary in JSON.
+
+Another personal project in my attempt to learn Rust and vibe-code responsabilly with Claude Code. Not validated in anyway. Not guaranteed or approved for use.
+
+Final goal is to produce a privacy-preserving metadata extraction from clinical trial data files for federated analysis.
 
 ## Overview
 
