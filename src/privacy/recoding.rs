@@ -22,7 +22,7 @@ impl ValueRecoder {
     }
 
     /// Create a recoder for site values
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn for_sites() -> Self {
         Self::new("Site")
     }

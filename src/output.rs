@@ -24,13 +24,6 @@ pub fn write_json_stdout(manifest: &ManifestSchema) -> Result<()> {
     Ok(())
 }
 
-/// Write manifest to a writer
-#[allow(dead_code)]
-pub fn write_json<W: Write>(manifest: &ManifestSchema, writer: W) -> Result<()> {
-    serde_json::to_writer_pretty(writer, manifest)?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

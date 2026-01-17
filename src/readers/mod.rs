@@ -1,13 +1,6 @@
 pub mod csv;
 pub mod excel;
 
-#[cfg(feature = "formats-readstat")]
-pub mod sas;
-#[cfg(feature = "formats-readstat")]
-pub mod spss;
-#[cfg(feature = "formats-readstat")]
-pub mod stata;
-
 use std::path::Path;
 
 use crate::privacy::RecodeRegistry;
@@ -35,7 +28,7 @@ pub fn create_reader(path: &Path) -> Result<Box<dyn DataReader>> {
 
     let format = FileFormat::from_extension(ext).ok_or_else(|| {
         crate::error::Error::UnsupportedFormat(format!(
-            "Unknown file extension: {}",
+            "Unsupported file extension: .{}",
             ext
         ))
     })?;
@@ -44,11 +37,5 @@ pub fn create_reader(path: &Path) -> Result<Box<dyn DataReader>> {
         FileFormat::Csv => Ok(Box::new(csv::CsvReader::new(path)?)),
         FileFormat::Tsv => Ok(Box::new(csv::CsvReader::new_tsv(path)?)),
         FileFormat::Excel => Ok(Box::new(excel::ExcelReader::new(path)?)),
-        #[cfg(feature = "formats-readstat")]
-        FileFormat::Stata => Ok(Box::new(stata::StataReader::new(path)?)),
-        #[cfg(feature = "formats-readstat")]
-        FileFormat::Sas => Ok(Box::new(sas::SasReader::new(path)?)),
-        #[cfg(feature = "formats-readstat")]
-        FileFormat::Spss => Ok(Box::new(spss::SpssReader::new(path)?)),
     }
 }

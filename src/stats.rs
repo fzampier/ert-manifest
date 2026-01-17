@@ -232,10 +232,6 @@ impl P2Quantile {
         Some(self.q[2]) // Middle marker is the quantile estimate
     }
 
-    #[allow(dead_code)]
-    pub fn count(&self) -> u64 {
-        self.count
-    }
 }
 
 impl Default for P2Quantile {
@@ -277,14 +273,8 @@ impl ColumnStatTracker {
         self.missing_count += 1;
     }
 
-    #[allow(dead_code)]
     pub fn count(&self) -> u64 {
         self.welford.count()
-    }
-
-    #[allow(dead_code)]
-    pub fn total_count(&self) -> u64 {
-        self.welford.count() + self.missing_count
     }
 }
 
@@ -352,7 +342,7 @@ impl CappedUniqueTracker {
         }
     }
 
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn get_count(&self, value: &str) -> u64 {
         self.value_counts.get(value).copied().unwrap_or(0)
     }
@@ -487,7 +477,6 @@ mod tests {
 
         assert_eq!(tracker.count(), 3);
         assert_eq!(tracker.missing_count, 1);
-        assert_eq!(tracker.total_count(), 4);
         assert!((tracker.welford.mean().unwrap() - 2.0).abs() < 1e-10);
     }
 }

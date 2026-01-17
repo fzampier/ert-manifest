@@ -24,11 +24,7 @@ once_cell = "1.19"
 tempfile = "3.10"
 
 [features]
-default = ["formats-basic"]
-formats-basic = []
-# formats-readstat feature is reserved for future ReadStat integration
-# Currently stubbed out as the readstat crate is not available on crates.io
-formats-readstat = []
+default = []
 
 [[bin]]
 name = "ert-manifest"

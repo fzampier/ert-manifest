@@ -23,7 +23,7 @@ pub fn extract_schema(path: &Path, options: ProcessingOptions) -> Result<Extract
 
     let format = FileFormat::from_extension(ext).ok_or_else(|| {
         crate::error::Error::UnsupportedFormat(format!(
-            "Unknown file extension: {}",
+            "Unsupported file extension: .{}",
             ext
         ))
     })?;

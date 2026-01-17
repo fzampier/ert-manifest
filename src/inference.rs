@@ -261,19 +261,6 @@ pub fn is_boolean(value: &str) -> bool {
     TRUE_TOKENS.contains(&lower.as_str()) || FALSE_TOKENS.contains(&lower.as_str())
 }
 
-/// Parse a boolean value
-#[allow(dead_code)]
-pub fn parse_boolean(value: &str) -> Option<bool> {
-    let lower = value.trim().to_lowercase();
-    if TRUE_TOKENS.contains(&lower.as_str()) {
-        Some(true)
-    } else if FALSE_TOKENS.contains(&lower.as_str()) {
-        Some(false)
-    } else {
-        None
-    }
-}
-
 /// Check if a value is an integer
 pub fn is_integer(value: &str) -> bool {
     let trimmed = value.trim();
@@ -327,12 +314,6 @@ pub fn is_datetime(value: &str) -> bool {
 /// Parse a numeric value
 pub fn parse_numeric(value: &str) -> Option<f64> {
     value.trim().parse::<f64>().ok()
-}
-
-/// Parse an integer value
-#[allow(dead_code)]
-pub fn parse_integer(value: &str) -> Option<i64> {
-    value.trim().parse::<i64>().ok()
 }
 
 #[cfg(test)]

@@ -79,7 +79,7 @@ fn run_gui() -> Result<()> {
     };
 
     eframe::run_native(
-        "ERT Manifest",
+        "ert-manifest",
         options,
         Box::new(|_cc| Box::new(GuiApp::default())),
     )

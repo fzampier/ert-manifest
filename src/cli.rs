@@ -147,7 +147,7 @@ impl eframe::App for GuiApp {
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("ERT Manifest");
+            ui.heading("ert-manifest v0.1.0");
             ui.add_space(10.0);
 
             match &self.state {

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
 /// Maximum length for short strings that can be safely exported
 pub const MAX_SHORT_STRING_LEN: usize = 32;
@@ -35,14 +34,6 @@ impl SafeValue {
             SafeValue::ShortString(s.to_string())
         }
     }
-
-    /// Create a suppressed value
-    #[allow(dead_code)]
-    pub fn suppressed(reason: impl Into<String>) -> Self {
-        SafeValue::Suppressed {
-            reason: reason.into(),
-        }
-    }
 }
 
 /// Data type classification for columns
@@ -58,47 +49,6 @@ pub enum DType {
     FreeText,
 }
 
-impl DType {
-    /// Check if this type can be upgraded to another type
-    #[allow(dead_code)]
-    pub fn can_upgrade_to(&self, other: DType) -> bool {
-        matches!(
-            (self, other),
-            (DType::Integer, DType::Numeric)
-                | (DType::Integer, DType::String)
-                | (DType::Numeric, DType::String)
-                | (DType::String, DType::FreeText)
-                | (DType::Date, DType::Datetime)
-                | (DType::Date, DType::String)
-                | (DType::Datetime, DType::String)
-                | (DType::Boolean, DType::String)
-        )
-    }
-
-    /// Get the upgraded type when types conflict
-    #[allow(dead_code)]
-    pub fn upgrade_with(&self, other: DType) -> DType {
-        if *self == other {
-            return *self;
-        }
-        match (self, other) {
-            (DType::Integer, DType::Numeric) | (DType::Numeric, DType::Integer) => DType::Numeric,
-            (DType::Integer, DType::String)
-            | (DType::String, DType::Integer)
-            | (DType::Numeric, DType::String)
-            | (DType::String, DType::Numeric)
-            | (DType::Boolean, DType::String)
-            | (DType::String, DType::Boolean) => DType::String,
-            (DType::Date, DType::Datetime) | (DType::Datetime, DType::Date) => DType::Datetime,
-            (DType::Date, DType::String)
-            | (DType::String, DType::Date)
-            | (DType::Datetime, DType::String)
-            | (DType::String, DType::Datetime) => DType::String,
-            (DType::String, DType::FreeText) | (DType::FreeText, DType::String) => DType::FreeText,
-            _ => DType::String, // Default fallback
-        }
-    }
-}
 
 /// Classification of a column's privacy sensitivity
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -274,12 +224,6 @@ pub enum FileFormat {
     Csv,
     Tsv,
     Excel,
-    #[cfg(feature = "formats-readstat")]
-    Stata,
-    #[cfg(feature = "formats-readstat")]
-    Sas,
-    #[cfg(feature = "formats-readstat")]
-    Spss,
 }
 
 impl FileFormat {
@@ -288,12 +232,6 @@ impl FileFormat {
             "csv" => Some(FileFormat::Csv),
             "tsv" | "tab" => Some(FileFormat::Tsv),
             "xlsx" | "xls" | "xlsm" | "xlsb" => Some(FileFormat::Excel),
-            #[cfg(feature = "formats-readstat")]
-            "dta" => Some(FileFormat::Stata),
-            #[cfg(feature = "formats-readstat")]
-            "sas7bdat" => Some(FileFormat::Sas),
-            #[cfg(feature = "formats-readstat")]
-            "sav" => Some(FileFormat::Spss),
             _ => None,
         }
     }
@@ -331,63 +269,6 @@ impl Default for ProcessingOptions {
             hash_file: true,
             relaxed: false,
         }
-    }
-}
-
-/// Tracker for unique values with cardinality limit
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct UniqueTracker {
-    values: HashSet<String>,
-    high_cardinality: bool,
-    max_values: usize,
-}
-
-#[allow(dead_code)]
-impl UniqueTracker {
-    pub fn new(max_values: usize) -> Self {
-        Self {
-            values: HashSet::new(),
-            high_cardinality: false,
-            max_values,
-        }
-    }
-
-    pub fn add(&mut self, value: &str) {
-        if self.high_cardinality {
-            return;
-        }
-        self.values.insert(value.to_string());
-        if self.values.len() > self.max_values {
-            self.high_cardinality = true;
-            self.values.clear(); // Free memory
-        }
-    }
-
-    pub fn is_high_cardinality(&self) -> bool {
-        self.high_cardinality
-    }
-
-    pub fn count(&self) -> usize {
-        if self.high_cardinality {
-            self.max_values + 1 // Indicates exceeded
-        } else {
-            self.values.len()
-        }
-    }
-
-    pub fn values(&self) -> Option<&HashSet<String>> {
-        if self.high_cardinality {
-            None
-        } else {
-            Some(&self.values)
-        }
-    }
-}
-
-impl Default for UniqueTracker {
-    fn default() -> Self {
-        Self::new(MAX_UNIQUE_VALUES)
     }
 }
 
