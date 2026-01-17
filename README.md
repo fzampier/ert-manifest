@@ -1,12 +1,14 @@
 # ert-manifest
 
-Sharing data is cumbersome. Good tools exist to anonymize data, including ARX (https://arx.deidentifier.org/downloads/).
+Sharing data is cumbersome. Good tools exist to anonymize data, including [ARX](https://arx.deidentifier.org/downloads/).
 
-Goal: To create a simple easy-to-distribute program that merely takes the data and returns a data dictionary in JSON.
+**Goal:** To create a simple easy-to-distribute program that merely takes the data and returns a data dictionary in JSON.
 
-Another personal project in my attempt to learn Rust and vibe-code responsabilly with Claude Code. Not validated in anyway. Not guaranteed or approved for use.
+Another personal project in my attempt to learn Rust and vibe-code responsibly with Claude Code. Not validated in any way. Not guaranteed or approved for use.
 
-Final goal is to produce a privacy-preserving metadata extraction from clinical trial data files for federated analysis.
+**Final goal:** Privacy-preserving metadata extraction from clinical trial data files for federated analysis.
+
+---
 
 ## Overview
 
@@ -23,13 +25,14 @@ Designed for clinical trial data sharing workflows where sites need to describe 
 - **Count Bucketing**: Reports counts as ranges (e.g., "101-1000") rather than exact values
 - **Streaming Processing**: Handles large files with O(1) memory using Welford's algorithm and P² quantile estimation
 - **File Integrity**: Computes SHA-256 hash for data provenance
+- **HIPAA Compliant**: Detects all 18 HIPAA identifier types
 
 ## Installation
 
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/ert-manifest.git
+git clone https://github.com/fzampier/ert-manifest.git
 cd ert-manifest
 cargo build --release
 ```
@@ -151,6 +154,9 @@ Individual values are checked for PHI patterns:
 - Phone numbers (US/Canada)
 - Social Security Numbers
 - ZIP/Postal codes
+- IP addresses
+- URLs
+- MAC addresses
 - Long alphanumeric identifiers
 
 ## Supported Formats
@@ -179,4 +185,4 @@ cargo build --release
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE)
