@@ -1,0 +1,18 @@
+# Build artifacts
+/target/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test files
+test_data.csv
+*.recode.txt
+
+# Temporary files
+/tmp/

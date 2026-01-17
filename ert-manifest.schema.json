@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fzampier/ert/manifest.schema.json",
+  "title": "ert-manifest output schema",
+  "description": "Schema for ert-manifest output files. A user-invoked tool that produces a dataset manifest (metadata only), comparable to a data dictionary, with additional privacy-preserving summaries. No row-level data is ever exported.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "generated_at",
+    "warning",
+    "privacy",
+    "missing_tokens",
+    "phi_risk_columns",
+    "suppressed_columns",
+    "source_file",
+    "file_type",
+    "sheets"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "description": "Semantic version of ert-manifest tool.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+.*$"
+    },
+    "manifest_build": {
+      "type": ["string", "null"],
+      "description": "Build identifier (e.g., git commit hash)."
+    },
+    "rust_version": {
+      "type": ["string", "null"],
+      "description": "Rust compiler version used for build."
+    },
+    "features_enabled": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Build features enabled (e.g., formats-basic, formats-readstat)."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when manifest was generated."
+    },
+    "warning": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable warning to review before sharing."
+    },
+    "privacy": {
+      "$ref": "#/$defs/PrivacySettings"
+    },
+    "missing_tokens": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Tokens treated as missing values during parsing."
+    },
+    "phi_risk_columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Column names flagged as potential PHI risk."
+    },
+    "suppressed_columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Column names where value export was suppressed."
+    },
+    "source_file": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Original filename (without path)."
+    },
+    "source_file_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-fA-F0-9]{64}$",
+      "description": "SHA-256 hash of input file, if --hash-file was enabled."
+    },
+    "file_type": {
+      "type": "string",
+      "enum": ["csv", "tsv", "excel", "stata", "sas", "spss"],
+      "description": "Detected input file format."
+    },
+    "sheets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Sheet" },
+      "description": "Array of sheets/tables in the file. Single-sheet formats have one entry."
+    }
+  },
+  "$defs": {
+    "PrivacySettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["k", "counts", "export_categorical_values", "median_method"],
+      "properties": {
+        "k": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Suppression threshold. Cells with count < k are suppressed."
+        },
+        "counts": {
+          "type": "string",
+          "enum": ["bucketed", "exact"],
+          "description": "Whether counts are bucketed or exact."
+        },
+        "export_categorical_values": {
+          "type": "string",
+          "enum": ["safe_only", "all"],
+          "description": "Categorical value export mode."
+        },
+        "median_method": {
+          "type": "string",
+          "enum": ["p2_approx", "exact"],
+          "description": "Median calculation method."
+        }
+      }
+    },
+    "CountBucket": {
+      "type": "string",
+      "enum": ["0", "1", "2-5", "6-10", "11-20", "21-100", "101-1000", ">1000"],
+      "description": "Bucketed count value."
+    },
+    "CountOrBucket": {
+      "oneOf": [
+        { "$ref": "#/$defs/CountBucket" },
+        { "type": "integer", "minimum": 0 }
+      ],
+      "description": "Either a bucket string or exact integer count."
+    },
+    "DType": {
+      "type": "string",
+      "enum": ["integer", "numeric", "string", "date", "datetime", "boolean", "free_text"],
+      "description": "Inferred column data type."
+    },
+    "Classification": {
+      "type": "string",
+      "enum": ["categorical", "continuous", "date", "datetime", "free_text_excluded", "high_cardinality"],
+      "description": "Column classification for analysis purposes."
+    },
+    "SafeValue": {
+      "description": "Value type-safe for export. Strings limited to 32 chars.",
+      "oneOf": [
+        { "type": "integer" },
+        { "type": "number" },
+        { "type": "boolean" },
+        {
+          "type": "string",
+          "maxLength": 32
+        }
+      ]
+    },
+    "CategoryCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "count"],
+      "properties": {
+        "value": { "$ref": "#/$defs/SafeValue" },
+        "count": { "$ref": "#/$defs/CountOrBucket" }
+      },
+      "description": "A single category value and its count."
+    },
+    "NumericStats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": ["number", "null"] },
+        "max": { "type": ["number", "null"] },
+        "mean": { "type": ["number", "null"] },
+        "median": { "type": ["number", "null"] },
+        "median_method": { 
+          "type": "string", 
+          "enum": ["p2_approx", "exact"] 
+        },
+        "median_ci": { "type": ["object", "null"] },
+        "median_note": { 
+          "type": ["string", "null"],
+          "description": "Warning note about median precision."
+        }
+      },
+      "description": "Summary statistics for numeric columns."
+    },
+    "DateRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": ["string", "null"], "format": "date" },
+        "max": { "type": ["string", "null"], "format": "date" },
+        "range_present": { 
+          "type": ["boolean", "null"],
+          "description": "True if data exists but range suppressed due to small n."
+        }
+      },
+      "description": "Date range for date columns."
+    },
+    "DateTimeRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": ["string", "null"], "format": "date-time" },
+        "max": { "type": ["string", "null"], "format": "date-time" },
+        "range_present": { 
+          "type": ["boolean", "null"],
+          "description": "True if data exists but range suppressed due to small n."
+        }
+      },
+      "description": "Datetime range for datetime columns."
+    },
+    "Column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "dtype",
+        "unique_count",
+        "unique_count_capped",
+        "missing_count",
+        "classification",
+        "exported_values"
+      ],
+      "properties": {
+        "name": { 
+          "type": "string", 
+          "minLength": 1,
+          "description": "Column name from source file."
+        },
+        "dtype": { 
+          "$ref": "#/$defs/DType" 
+        },
+        "unique_count": { 
+          "$ref": "#/$defs/CountOrBucket",
+          "description": "Number of unique values (bucketed by default)."
+        },
+        "unique_count_capped": { 
+          "type": "boolean",
+          "description": "True if unique tracking was capped (cardinality >= cap)."
+        },
+        "unique_count_note": {
+          "type": ["string", "null"],
+          "description": "Explanation when unique count is capped."
+        },
+        "missing_count": { 
+          "$ref": "#/$defs/CountOrBucket",
+          "description": "Number of missing values (bucketed by default)."
+        },
+        "classification": { 
+          "$ref": "#/$defs/Classification" 
+        },
+        "exported_values": { 
+          "type": "boolean",
+          "description": "Whether categorical values were exported."
+        },
+        "values": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CategoryCount" },
+          "description": "Categorical values and counts. Only present if exported_values=true."
+        },
+        "stats": {
+          "$ref": "#/$defs/NumericStats",
+          "description": "Numeric statistics. Only present for continuous columns when not suppressed."
+        },
+        "stats_suppressed": {
+          "type": ["boolean", "null"],
+          "description": "True if stats suppressed due to small n."
+        },
+        "range": {
+          "oneOf": [
+            { "$ref": "#/$defs/DateRange" },
+            { "$ref": "#/$defs/DateTimeRange" }
+          ],
+          "description": "Date/datetime range. Only present for date/datetime columns."
+        },
+        "phi_warning": { 
+          "type": ["string", "null"],
+          "description": "Warning if column name suggests PHI."
+        },
+        "suppression_reason": { 
+          "type": ["string", "null"],
+          "description": "Reason values were suppressed, if applicable."
+        },
+        "note": { 
+          "type": ["string", "null"],
+          "description": "Additional notes about the column."
+        },
+        "possible_date": { 
+          "type": ["boolean", "null"],
+          "description": "True if numeric column may contain Excel date serial numbers."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "exported_values": { "const": true } },
+            "required": ["exported_values"]
+          },
+          "then": {
+            "required": ["values"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "exported_values": { "const": false } },
+            "required": ["exported_values"]
+          },
+          "then": {
+            "not": { "required": ["values"] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "classification": { "const": "continuous" } },
+            "required": ["classification"]
+          },
+          "then": {
+            "anyOf": [
+              { "required": ["stats"] },
+              { 
+                "properties": { "stats_suppressed": { "const": true } },
+                "required": ["stats_suppressed"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": { "classification": { "enum": ["date", "datetime"] } },
+            "required": ["classification"]
+          },
+          "then": {
+            "required": ["range"]
+          }
+        }
+      ]
+    },
+    "Sheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sheet_name", "sheet_index", "total_rows", "total_columns", "columns"],
+      "properties": {
+        "sheet_name": { 
+          "type": "string", 
+          "minLength": 1,
+          "description": "Sheet name. For single-sheet formats, this is the filename."
+        },
+        "sheet_index": { 
+          "type": "integer", 
+          "minimum": 0,
+          "description": "Zero-based sheet index."
+        },
+        "total_rows": { 
+          "$ref": "#/$defs/CountOrBucket",
+          "description": "Total row count (bucketed by default)."
+        },
+        "total_rows_exact": { 
+          "type": ["integer", "null"], 
+          "minimum": 0,
+          "description": "Exact row count if --exact-counts enabled."
+        },
+        "total_columns": { 
+          "type": "integer", 
+          "minimum": 0,
+          "description": "Total column count."
+        },
+        "columns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Column" },
+          "description": "Array of column definitions."
+        }
+      }
+    }
+  }
+}
