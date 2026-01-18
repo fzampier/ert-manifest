@@ -150,6 +150,7 @@ Site_B = Calgary Foothills
 ### Value-Level Protection
 
 Individual values are checked for PHI patterns:
+- **Person names** (~10,400 names from US/Canada Census data)
 - Email addresses
 - Phone numbers (US/Canada)
 - Social Security Numbers
@@ -158,6 +159,11 @@ Individual values are checked for PHI patterns:
 - URLs
 - MAC addresses
 - Long alphanumeric identifiers
+
+Name matching is case-insensitive and accent-normalized:
+- `CÔTÉ` and `Cote` and `côté` all match
+- `João` and `Joao` all match
+- `François` and `Francois` all match
 
 ## Supported Formats
 
@@ -182,6 +188,14 @@ cargo test
 # Build release
 cargo build --release
 ```
+
+## Data Sources
+
+Name detection uses official census data:
+
+- **US Surnames**: [U.S. Census Bureau 2010 Surnames](https://www.census.gov/topics/population/genealogy/data/2010_surnames.html) - Top 1,000 surnames
+- **Canadian First Names**: [Statistics Canada 2021 Census - First Names](https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/names-noms/index.cfm?Lang=E) - 9,152 first names with count ≥ 250
+- **Additional Coverage**: Common French-Canadian surnames, Brazilian Portuguese surnames and first names
 
 ## License
 

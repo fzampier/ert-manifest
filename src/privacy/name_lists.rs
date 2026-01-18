@@ -11,6 +11,30 @@
 
 use std::collections::HashSet;
 use once_cell::sync::Lazy;
+use unicode_normalization::UnicodeNormalization;
+
+/// Normalize a string by converting to lowercase and removing diacritics/accents.
+/// "CÔTÉ" -> "cote", "João" -> "joao", "François" -> "francois"
+fn normalize_name(s: &str) -> String {
+    s.trim()
+        .to_lowercase()
+        .nfd()  // Decompose: é -> e + combining accent
+        .filter(|c| !c.is_mark_combining())  // Remove combining marks
+        .collect()
+}
+
+/// Check if a character is a Unicode combining mark (diacritical mark)
+trait CombiningMark {
+    fn is_mark_combining(&self) -> bool;
+}
+
+impl CombiningMark for char {
+    fn is_mark_combining(&self) -> bool {
+        // Unicode combining diacritical marks range: U+0300 to U+036F
+        // Also includes other combining mark ranges
+        matches!(*self as u32, 0x0300..=0x036F | 0x1AB0..=0x1AFF | 0x1DC0..=0x1DFF | 0x20D0..=0x20FF | 0xFE20..=0xFE2F)
+    }
+}
 
 // US Census surnames: 1000
 // Canadian Census first names: 9152
@@ -10417,27 +10441,32 @@ static FIRST_NAME_SET: Lazy<HashSet<&'static str>> = Lazy::new(|| {
 /// - The value is a known first name or surname
 /// - The value is a "Firstname Lastname" pattern where either part is recognized
 /// - The value is a "Firstname Middle Lastname" pattern with recognized first/last
+///
+/// Matching is case-insensitive and accent-normalized:
+/// - "CÔTÉ" matches "cote"
+/// - "João" matches "joao"
+/// - "François" matches "francois"
 pub fn is_likely_name(value: &str) -> bool {
-    let value_lower = value.trim().to_lowercase();
-    
+    let normalized = normalize_name(value);
+
     // Empty or single char - not a name
-    if value_lower.len() < 2 {
+    if normalized.len() < 2 {
         return false;
     }
-    
+
     // Check single word against both lists
-    if SURNAME_SET.contains(value_lower.as_str()) || FIRST_NAME_SET.contains(value_lower.as_str()) {
+    if SURNAME_SET.contains(normalized.as_str()) || FIRST_NAME_SET.contains(normalized.as_str()) {
         return true;
     }
-    
+
     // Check "Firstname Lastname" pattern
-    let parts: Vec<&str> = value_lower.split_whitespace().collect();
+    let parts: Vec<&str> = normalized.split_whitespace().collect();
     if parts.len() == 2 {
         let first = parts[0];
         let last = parts[1];
-        
+
         // Both parts should be alphabetic and reasonable length
-        if first.chars().all(|c| c.is_alphabetic() || c == '-') 
+        if first.chars().all(|c| c.is_alphabetic() || c == '-')
             && last.chars().all(|c| c.is_alphabetic() || c == '-')
             && first.len() >= 2 && first.len() <= 20
             && last.len() >= 2 && last.len() <= 25
@@ -10452,13 +10481,13 @@ pub fn is_likely_name(value: &str) -> bool {
             }
         }
     }
-    
+
     // Check "Firstname Middle Lastname" pattern
     if parts.len() == 3 {
         let first = parts[0];
         let last = parts[2];
-        
-        if first.chars().all(|c| c.is_alphabetic() || c == '-') 
+
+        if first.chars().all(|c| c.is_alphabetic() || c == '-')
             && last.chars().all(|c| c.is_alphabetic() || c == '-')
             && first.len() >= 2 && last.len() >= 2
         {
@@ -10469,7 +10498,7 @@ pub fn is_likely_name(value: &str) -> bool {
             }
         }
     }
-    
+
     false
 }
 
@@ -10539,6 +10568,38 @@ mod tests {
         assert!(is_likely_name("Mary Smith"));
         assert!(is_likely_name("Robert Jones"));
         assert!(is_likely_name("Patricia Williams"));
+    }
+
+    #[test]
+    fn test_accent_normalization() {
+        // French Canadian names with accents
+        assert!(is_likely_name("CÔTÉ"));      // matches "cote"
+        assert!(is_likely_name("Côté"));      // matches "cote"
+        assert!(is_likely_name("côté"));      // matches "cote"
+        assert!(is_likely_name("François"));  // matches "francois"
+        assert!(is_likely_name("FRANÇOIS"));  // matches "francois"
+        assert!(is_likely_name("Hélène"));    // matches "helene"
+        assert!(is_likely_name("Geneviève")); // matches "genevieve"
+        assert!(is_likely_name("Véronique")); // matches "veronique"
+
+        // Portuguese/Brazilian names with accents
+        assert!(is_likely_name("João"));      // matches "joao"
+        assert!(is_likely_name("JOÃO"));      // matches "joao"
+        assert!(is_likely_name("José"));      // matches "jose"
+        assert!(is_likely_name("Gonçalves")); // matches "goncalves"
+
+        // Full names with accents
+        assert!(is_likely_name("François Côté"));
+        assert!(is_likely_name("João Silva"));
+    }
+
+    #[test]
+    fn test_normalize_name_helper() {
+        assert_eq!(normalize_name("CÔTÉ"), "cote");
+        assert_eq!(normalize_name("João"), "joao");
+        assert_eq!(normalize_name("François"), "francois");
+        assert_eq!(normalize_name("Hélène"), "helene");
+        assert_eq!(normalize_name("  SMITH  "), "smith");
     }
 }
 
