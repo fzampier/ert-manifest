@@ -1,5 +1,6 @@
 pub mod bucketing;
 pub mod column_names;
+pub mod name_lists;
 pub mod recoding;
 pub mod value_patterns;
 

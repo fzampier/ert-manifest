@@ -1,6 +1,8 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+use super::name_lists::is_likely_name;
+
 /// Result of checking a value for PHI patterns
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValuePatternResult {
@@ -124,6 +126,11 @@ pub fn check_value_pattern(value: &str) -> ValuePatternResult {
         return ValuePatternResult::phi("mac_address", "Value appears to be a MAC address");
     }
 
+    // Check for person names (HIPAA #1)
+    if is_likely_name(trimmed) {
+        return ValuePatternResult::phi("name", "Value appears to be a person's name");
+    }
+
     ValuePatternResult::safe()
 }
 
@@ -242,5 +249,33 @@ mod tests {
     fn test_mac_address_detection() {
         assert!(check_value_pattern("00:1A:2B:3C:4D:5E").is_phi);
         assert!(check_value_pattern("00-1A-2B-3C-4D-5E").is_phi);
+    }
+
+    // HIPAA #1: Names - value-level detection
+    #[test]
+    fn test_name_detection() {
+        // Single names
+        assert!(check_value_pattern("Smith").is_phi);
+        assert!(check_value_pattern("John").is_phi);
+        assert!(check_value_pattern("Maria").is_phi);
+        assert!(check_value_pattern("Tremblay").is_phi);
+
+        // Full names
+        assert!(check_value_pattern("Mary Smith").is_phi);
+        assert!(check_value_pattern("John Johnson").is_phi);
+        assert!(check_value_pattern("Jose Silva").is_phi);
+
+        // Canadian Census names
+        assert!(check_value_pattern("Muhammad").is_phi);
+        assert!(check_value_pattern("Aaliyah").is_phi);
+    }
+
+    #[test]
+    fn test_non_names() {
+        // Clinical terms should not be detected as names
+        assert!(!check_value_pattern("Treatment").is_phi);
+        assert!(!check_value_pattern("Control").is_phi);
+        assert!(!check_value_pattern("Placebo").is_phi);
+        assert!(!check_value_pattern("Baseline").is_phi);
     }
 }
