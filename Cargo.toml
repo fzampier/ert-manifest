@@ -1,6 +1,6 @@
 [package]
 name = "ert-manifest"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Privacy-preserving metadata extraction from data files for clinical trial analysis"
 license = "MIT"
